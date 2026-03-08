@@ -1,0 +1,8 @@
+anthropic
+ultralytics
+fastapi
+uvicorn
+python-dotenv
+sgp4
+requests
+numpy
