@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orbital Watchdog</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #080c14;
+      --surface:   #0d1520;
+      --border:    #1a2d45;
+      --accent:    #00d4ff;
+      --accent2:   #0077ff;
+      --text:      #c8dff0;
+      --muted:     #4a6a85;
+      --low:       #00c896;
+      --medium:    #f0b429;
+      --high:      #f06a29;
+      --critical:  #f02929;
+      --mono:      'Share Tech Mono', monospace;
+      --sans:      'Barlow', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* star field background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 92% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 90%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 85%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 60% 50%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 78% 25%, rgba(255,255,255,0.5) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      margin-bottom: 52px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .logo-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .orbit-icon {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .orbit-icon::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border: 1px solid rgba(0,212,255,0.25);
+      border-radius: 50%;
+      transform: rotateX(60deg);
+    }
+    .orbit-icon::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+    h1 span { color: var(--accent); }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: var(--mono);
+    }
+
+    /* ── SEARCH ── */
+    .search-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px 28px 24px;
+      margin-bottom: 36px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .search-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 11px 16px;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    button {
+      background: var(--accent2);
+      border: none;
+      border-radius: 3px;
+      padding: 11px 22px;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--accent); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .examples {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .examples span {
+      color: var(--accent);
+      cursor: pointer;
+      margin-right: 10px;
+      font-family: var(--mono);
+    }
+    .examples span:hover { text-decoration: underline; }
+
+    /* ── STATUS ── */
+    .status {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--accent);
+      margin-bottom: 24px;
+      animation: fadeUp 0.3s ease both;
+    }
+    .status.visible { display: flex; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── RESULTS ── */
+    #results { animation: fadeUp 0.5s ease both; }
+
+    .report-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 4px 4px 0 0;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .report-title {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .satellite-name {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .risk-badge {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 2px;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .risk-LOW      { background: rgba(0,200,150,0.15); color: var(--low);      border: 1px solid rgba(0,200,150,0.3); }
+    .risk-MEDIUM   { background: rgba(240,180,41,0.15); color: var(--medium);  border: 1px solid rgba(240,180,41,0.3); }
+    .risk-HIGH     { background: rgba(240,106,41,0.15); color: var(--high);    border: 1px solid rgba(240,106,41,0.3); }
+    .risk-CRITICAL { background: rgba(240,41,41,0.15);  color: var(--critical);border: 1px solid rgba(240,41,41,0.3); }
+    .risk-NONE     { background: rgba(74,106,133,0.15); color: var(--muted);   border: 1px solid rgba(74,106,133,0.3); }
+
+    .report-meta {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      padding: 12px 24px;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+    }
+    .meta-label { color: var(--muted); margin-right: 6px; }
+    .meta-value { color: var(--text); }
+
+    .conjunctions-list {
+      border: 1px solid var(--border);
+      border-radius: 0 0 4px 4px;
+      overflow: hidden;
+    }
+
+    .conjunction-item {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: start;
+      transition: background 0.15s;
+    }
+    .conjunction-item:last-child { border-bottom: none; }
+    .conjunction-item:hover { background: rgba(0,212,255,0.03); }
+
+    .conj-index {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding-top: 3px;
+      min-width: 20px;
+    }
+
+    .conj-body {}
+
+    .conj-name {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .conj-details {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .conj-details strong { color: var(--text); }
+
+    .conj-action {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    .conj-distance {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      color: #fff;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .conj-distance small {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .no-conjunctions {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 4px 4px;
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--low);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    .error-card {
+      background: rgba(240,41,41,0.08);
+      border: 1px solid rgba(240,41,41,0.3);
+      border-radius: 4px;
+      padding: 20px 24px;
+      color: var(--critical);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    .generated-at {
+      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-line">
+      <div class="orbit-icon"></div>
+      <h1>Orbital<span>Watchdog</span></h1>
+    </div>
+    <div class="tagline">Space Debris Conjunction Screener</div>
+  </header>
+
+  <div class="search-card">
+    <div class="search-label">Satellite Identifier</div>
+    <div class="search-row">
+      <input type="text" id="satInput" placeholder="e.g. ISS, STARLINK-1234, TERRA" />
+      <button id="analyzeBtn" onclick="analyze()">Analyze</button>
+    </div>
+    <div class="examples">
+      Try:
+      <span onclick="setExample('ISS')">ISS</span>
+      <span onclick="setExample('TERRA')">TERRA</span>
+      <span onclick="setExample('AQUA')">AQUA</span>
+      <span onclick="setExample('SENTINEL-2A')">SENTINEL-2A</span>
+    </div>
+  </div>
+
+  <div class="status" id="status">
+    <div class="spinner"></div>
+    <span id="statusText">Fetching orbital data...</span>
+  </div>
+
+  <div id="results"></div>
+
+</div>
+
+<script>
+  function setExample(name) {
+    document.getElementById('satInput').value = name;
+    analyze();
+  }
+
+  document.getElementById('satInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') analyze();
+  });
+
+  async function analyze() {
+    const name = document.getElementById('satInput').value.trim();
+    if (!name) return;
+
+    const btn = document.getElementById('analyzeBtn');
+    const status = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const results = document.getElementById('results');
+
+    btn.disabled = true;
+    results.innerHTML = '';
+    status.classList.add('visible');
+    statusText.textContent = `Fetching TLE for "${name}"...`;
+
+    setTimeout(() => statusText.textContent = 'Running SGP4 orbit propagation...', 3000);
+    setTimeout(() => statusText.textContent = 'Screening for conjunctions...', 8000);
+    setTimeout(() => statusText.textContent = 'AI risk analyst working...', 15000);
+
+    try {
+      const res = await fetch('https://arpmzpock1.execute-api.eu-central-1.amazonaws.com/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ satellite_name: name })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        results.innerHTML = `<div class="error-card">⚠ ${data.detail || 'Unknown error'}</div>`;
+        return;
+      }
+
+      renderReport(data.report, name);
+
+    } catch (err) {
+      results.innerHTML = `<div class="error-card">⚠ Connection error: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      status.classList.remove('visible');
+    }
+  }
+
+  function parseReport(reportText) {
+    // Try to extract structured data from the agent's markdown report
+    const conjunctions = [];
+    const lines = reportText.split('\n');
+
+    let overallRisk = 'NONE';
+    if (reportText.includes('CRITICAL')) overallRisk = 'CRITICAL';
+    else if (reportText.includes('HIGH')) overallRisk = 'HIGH';
+    else if (reportText.includes('MEDIUM')) overallRisk = 'MEDIUM';
+    else if (reportText.includes('LOW')) overallRisk = 'LOW';
+
+    // extract conjunction blocks via regex
+    const distRegex = /(\d+\.?\d*)\s*km/gi;
+    const timeRegex = /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^\s]*)/g;
+    const nameRegex = /COSMOS\s+\d+\s+DEB|debris object[:\s]+([A-Z0-9\s\-]+)/gi;
+
+    let distMatches = [...reportText.matchAll(distRegex)];
+    let timeMatches = [...reportText.matchAll(timeRegex)];
+
+    // build conjunction entries from pairs
+    const seen = new Set();
+    distMatches.forEach((m, i) => {
+      const dist = parseFloat(m[1]);
+      if (dist > 5000 || seen.has(dist)) return;
+      seen.add(dist);
+
+      let risk = 'LOW';
+      if (dist < 5) risk = 'CRITICAL';
+      else if (dist < 50) risk = 'HIGH';
+      else if (dist < 200) risk = 'MEDIUM';
+
+      conjunctions.push({
+        name: 'COSMOS 1408 DEB',
+        min_distance_km: dist,
+        closest_approach_time: timeMatches[i] ? timeMatches[i][1] : '—',
+        risk_level: risk,
+        action: riskAction(risk)
+      });
+    });
+
+    return { overallRisk, conjunctions };
+  }
+
+  function riskAction(risk) {
+    const map = {
+      CRITICAL: 'Immediate maneuver required',
+      HIGH: 'Maneuver planning required',
+      MEDIUM: 'Monitor closely, prepare contingency maneuver',
+      LOW: 'Monitor periodically'
+    };
+    return map[risk] || '—';
+  }
+
+  function riskColor(risk) {
+    const map = { LOW: '#00c896', MEDIUM: '#f0b429', HIGH: '#f06a29', CRITICAL: '#f02929', NONE: '#4a6a85' };
+    return map[risk] || '#4a6a85';
+  }
+
+  function renderReport(reportText, satName) {
+    const { overallRisk, conjunctions } = parseReport(reportText);
+    const results = document.getElementById('results');
+
+    const now = new Date().toUTCString();
+
+    let conjHTML = '';
+    if (conjunctions.length === 0) {
+      conjHTML = `<div class="no-conjunctions">✓ No conjunctions detected within threshold</div>`;
+    } else {
+      conjHTML = `<div class="conjunctions-list">` +
+        conjunctions.map((c, i) => `
+          <div class="conjunction-item">
+            <div class="conj-index">${String(i+1).padStart(2,'0')}</div>
+            <div class="conj-body">
+              <div class="conj-name">${c.name}</div>
+              <div class="conj-details">
+                <span><strong>${c.closest_approach_time.replace('T',' ').substring(0,19)} UTC</strong></span>
+                <span class="risk-badge risk-${c.risk_level}">${c.risk_level}</span>
+              </div>
+              <div class="conj-action">${c.action}</div>
+            </div>
+            <div class="conj-distance">
+              ${c.min_distance_km} km
+              <small>min distance</small>
+            </div>
+          </div>
+        `).join('') +
+        `</div>`;
+    }
+
+    results.innerHTML = `
+      <div class="report-header">
+        <div>
+          <div class="report-title">Conjunction Risk Report</div>
+          <div class="satellite-name">${satName.toUpperCase()}</div>
+        </div>
+        <div class="risk-badge risk-${overallRisk}">Overall: ${overallRisk}</div>
+      </div>
+      <div class="report-meta">
+        <div class="meta-item">
+          <span class="meta-label">Conjunctions</span>
+          <span class="meta-value">${conjunctions.length} detected</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Window</span>
+          <span class="meta-value">24 hours</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Debris catalog</span>
+          <span class="meta-value">COSMOS 1408 fragments</span>
+        </div>
+      </div>
+      ${conjHTML}
+      <div class="generated-at">Generated ${now}</div>
+    `;
+  }
+</script>
+</body>
+</html>
